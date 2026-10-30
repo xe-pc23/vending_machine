@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>自動販売機</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: #20342d;
+        background: #f3f5ef;
+        line-height: 1.6;
+      }
+
+      * { box-sizing: border-box; }
+      body { margin: 0; padding: 48px 20px; }
+      main { width: 100%; max-width: 760px; margin: 0 auto; }
+      h1 { margin: 0; font-size: clamp(28px, 6vw, 40px); letter-spacing: .04em; }
+      h2 { margin: 0 0 16px; font-size: 18px; }
+      p { margin: 0; }
+      header { margin-bottom: 28px; }
+      header p { margin-top: 8px; color: #586b61; }
+      .layout { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+      .panel { padding: 28px; background: #fff; border: 1px solid #dce3d9; border-radius: 20px; }
+      .product-image {
+        min-height: 180px;
+        display: grid;
+        place-items: center;
+        margin-bottom: 24px;
+        background: #eaf3f8;
+        border-radius: 12px;
+      }
+      .bottle { position: relative; width: 58px; height: 110px; border: 2px solid #8bb2c9; border-radius: 16px 16px 12px 12px; background: #d3e9f5; }
+      .bottle::before { content: ""; position: absolute; width: 26px; height: 16px; top: -16px; left: 14px; border-radius: 4px 4px 0 0; background: #447797; }
+      .bottle::after { content: "水"; position: absolute; inset: 32px 0 auto; text-align: center; padding: 8px 0; background: white; color: #36637d; font-weight: 700; }
+      .product-heading { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+      .product-heading h2 { margin-bottom: 4px; font-size: 24px; }
+      .price { font-size: 22px; font-weight: 700; white-space: nowrap; }
+      .description { color: #586b61; font-size: 14px; margin-bottom: 24px; }
+      .balance { margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid #e3e8e0; }
+      .balance h2 { margin-bottom: 4px; }
+      .balance-value { font-size: 40px; font-weight: 700; font-variant-numeric: tabular-nums; }
+      .balance-value span { font-size: 18px; }
+      .coins { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+      button {
+        width: 100%;
+        padding: 12px 8px;
+        border: 1px solid transparent;
+        border-radius: 10px;
+        font: inherit;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      button:focus-visible { outline: 3px solid #a15f12; outline-offset: 4px; }
+      .purchase { color: white; background: #245e48; }
+      .purchase:hover { background: #194a37; }
+      .coin { color: #20342d; border-color: #cdd8c9; background: #f3f6f0; }
+      .coin:hover { background: #e3ebdd; }
+      .refund { margin-top: 16px; color: #43584b; background: white; border-color: #cdd8c9; }
+      .refund:hover { background: #f3f6f0; }
+      .message { margin-top: 20px; padding: 16px 20px; color: #43584b; background: #e8eee3; border-radius: 12px; }
+
+      @media (max-width: 560px) {
+        body { padding: 28px 16px; }
+        .layout { grid-template-columns: 1fr; }
+        .panel { padding: 24px; }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>自動販売機</h1>
+      </header>
+
+      <div class="layout">
+        <section class="panel" aria-labelledby="product-name">
+          <div class="product-image" aria-hidden="true">
+            <div class="bottle"></div>
+          </div>
+          <!-- 商品情報は、後からGoで取得した値に置き換えられます。 -->
+          <div class="product-heading">
+            <h2 id="product-name">水</h2>
+            <p class="price">100円</p>
+          </div>
+          <p class="description">すっきり飲めるミネラルウォーター / 500ml</p>
+          <!-- POST /purchase : product_id を送ります。価格の判定はGoで実装します。 -->
+          <form action="/purchase" method="post">
+            <input type="hidden" name="product_id" value="water">
+            <button class="purchase" type="submit">水を購入する</button>
+          </form>
+        </section>
+
+        <section class="panel" aria-labelledby="payment-heading">
+          <div class="balance">
+            <h2 id="payment-heading">投入金額</h2>
+            <!-- 0 は表示用の初期値です。Go側で保持する残高を表示してください。 -->
+            <p class="balance-value" id="balance">0 <span>円</span></p>
+          </div>
+          <h2 id="deposit-heading">お金を入れる</h2>
+          <!-- POST /deposit : 押したボタンの amount を送ります。 -->
+          <form action="/deposit" method="post" aria-labelledby="deposit-heading">
+            <div class="coins">
+              <button class="coin" type="submit" name="amount" value="10">10円</button>
+              <button class="coin" type="submit" name="amount" value="50">50円</button>
+              <button class="coin" type="submit" name="amount" value="100">100円</button>
+            </div>
+          </form>
+          <!-- POST /refund : 返金を要求します。返金額の計算はGoで実装します。 -->
+          <form action="/refund" method="post">
+            <button class="refund" type="submit">おつり・返金</button>
+          </form>
+        </section>
+      </div>
+
+      <!-- Goで処理した結果のメッセージを表示する場所です。 -->
+      <p class="message" id="message" role="status">お金を入れて、商品を選んでください。</p>
+    </main>
+  </body>
+</html>
